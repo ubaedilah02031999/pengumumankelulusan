@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengumuman Kelulusan</title>
+
+<style>
+:root{
+  --primary:#1e3a8a;
+  --accent:#2563eb;
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --text:#1f2937;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:system-ui,-apple-system,sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:white;
+  padding:20px 15px;
+  text-align:center;
+}
+
+.header img{
+  width:60px;
+  margin-bottom:8px;
+}
+
+.header h1{
+  font-size:18px;
+  font-weight:700;
+}
+
+.header p{
+  font-size:13px;
+  opacity:0.9;
+  margin-top:4px;
+}
+
+/* WRAPPER */
+.wrapper{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+/* SEARCH */
+.search-box{
+  background:var(--card);
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.05);
+  margin-top:-30px;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  font-size:15px;
+}
+
+button{
+  width:100%;
+  margin-top:10px;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:var(--accent);
+  color:white;
+  font-size:15px;
+  cursor:pointer;
+}
+
+/* LOADING */
+.spinner{
+  display:none;
+  margin:15px auto;
+  width:26px;
+  height:26px;
+  border:3px solid #eee;
+  border-top:3px solid var(--accent);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+  100%{transform:rotate(360deg);}
+}
+
+/* RESULT CARD */
+.result{
+  margin-top:20px;
+  background:var(--card);
+  border-radius:14px;
+  padding:25px 18px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.05);
+  text-align:center;
+
+  opacity:0;
+  transform:translateY(15px);
+  transition:0.4s ease;
+}
+
+.result.show{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* AVATAR */
+.avatar{
+  width:85px;
+  height:85px;
+  margin:0 auto 12px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#2563eb,#1e3a8a);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  color:white;
+  font-weight:800;
+  box-shadow:0 10px 20px rgba(37,99,235,0.3);
+}
+
+/* NAME */
+.name{
+  font-size:18px;
+  font-weight:800;
+  color:var(--primary);
+  margin-bottom:10px;
+}
+
+/* INFO */
+.info{
+  font-size:14px;
+  margin:4px 0;
+  color:#444;
+}
+
+/* BADGE 3 LEVEL */
+.badge{
+  display:inline-block;
+  margin-top:10px;
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:700;
+  color:white;
+}
+
+/* 3 LEVEL WARNA */
+.sangat{
+  background:#16a34a;
+}
+
+.mem{
+  background:#22c55e;
+}
+
+.cukup{
+  background:#dc2626;
+}
+
+/* NOTE */
+.note{
+  margin-top:15px;
+  font-size:12px;
+  color:#666;
+  background:#f3f4f6;
+  padding:10px;
+  border-radius:10px;
+  line-height:1.4;
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:20px;
+  font-size:12px;
+  color:#666;
+  margin-top:20px;
+}
+</style>
+
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <img src="logo.png">
+  <h1>SMK AR-RAHMAH BOGOR</h1>
+  <p>Pengumuman Kelulusan Siswa Kelas XII</p>
+  <p>Tahun Ajaran 2025 - 2026</p>
+  <br><br>
+</div>
+
+<div class="wrapper">
+
+  <div class="search-box">
+    <input type="text" id="nisn" placeholder="Masukkan NISN">
+    <button onclick="cariData()">Cari Data</button>
+
+    <div id="loading" class="spinner"></div>
+
+    <div id="hasil" class="result"></div>
+  </div>
+
+</div>
+
+<footer>
+© 2026 SMK AR-RAHMAH BOGOR • Sistem Pengumuman Online
+</footer>
+
+<script>
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQlxCk2GJ4DLSD_R9dDtq8BGrKQjLz3_mEH08UT5ncRYTglmNy33EJHTDHdnsCh-hj-rtHqLKDoYJl6/pub?gid=0&single=true&output=csv";
+
+let dataSiswa = [];
+
+/* PARSER */
+function parseCSV(text){
+  const lines = text.trim().split("\n");
+
+  return lines.slice(1).map(line=>{
+    const val = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+
+    return {
+      nisn:(val?.[0]||"").replace(/"/g,"").trim(),
+      nama:(val?.[1]||"").replace(/"/g,"").trim(),
+      ttl:(val?.[2]||"").replace(/"/g,"").trim(),
+      kelas:(val?.[3]||"").replace(/"/g,"").trim(),
+      status:(val?.[4]||"").replace(/"/g,"").trim(),
+    };
+  });
+}
+
+/* LOAD DATA */
+fetch(sheetURL)
+.then(r=>r.text())
+.then(t=>{
+  dataSiswa=parseCSV(t);
+});
+
+/* SEARCH */
+function cariData(){
+  const nisn=document.getElementById("nisn").value.trim();
+  const hasil=document.getElementById("hasil");
+  const loading=document.getElementById("loading");
+
+  hasil.classList.remove("show");
+  hasil.innerHTML="";
+
+  if(!nisn){
+    hasil.innerHTML="Masukkan NISN";
+    hasil.classList.add("show");
+    return;
+  }
+
+  loading.style.display="block";
+
+  setTimeout(()=>{
+    loading.style.display="none";
+
+    const s=dataSiswa.find(x=>x.nisn===nisn);
+
+    if(s){
+
+      const status = (s.status || "").toUpperCase();
+
+      let badgeClass = "";
+      let pesan = "";
+
+      /* 3 LEVEL KELULUSAN */
+      if(status.includes("LULUS SANGAT MEMUASKAN")){
+        badgeClass="sangat";
+        pesan="Lanjutkan ke pendidikan selanjutnya dengan penuh semangat.";
+      }
+      else if(status.includes("LULUS MEMUASKAN")){
+        badgeClass="mem";
+        pesan="Tetap semangat dan ayo buktikan bahwa kamu itu calon orang sukses.";
+      }
+      else if(status.includes("LULUS CUKUP BAIK")){
+        badgeClass="cukup";
+        pesan="Ayo perbaiki dikemudian hari, jangan lupa lebih rajin dan giat.";
+      }
+      else{
+        badgeClass="cukup";
+        pesan="Silakan hubungi pihak sekolah untuk informasi lebih lanjut.";
+      }
+
+      const initial = s.nama ? s.nama.charAt(0).toUpperCase() : "?";
+
+      hasil.innerHTML=`
+        <div class="avatar">${initial}</div>
+
+        <div class="name">${s.nama}</div>
+
+        <div class="info"><b>Tanggal Lahir:</b> ${s.ttl}</div>
+        <div class="info"><b>Kelas:</b> ${s.kelas}</div>
+
+        <div class="badge ${badgeClass}">
+          ${s.status}
+        </div>
+
+        <div class="note">
+          ${pesan}
+        </div>
+      `;
+    } else {
+      hasil.innerHTML="Data tidak ditemukan";
+    }
+
+    hasil.classList.add("show");
+
+  },700);
+}
+</script>
+
+</body>
+</html>
