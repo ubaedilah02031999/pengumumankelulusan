@@ -84,6 +84,21 @@ button{
   color:white;
   font-size:15px;
   cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+/* BUTTON DOWNLOAD */
+.download-btn{
+  margin-top:15px;
+  background:#16a34a;
+}
+
+.download-btn:hover{
+  background:#15803d;
 }
 
 /* LOADING */
@@ -152,7 +167,7 @@ button{
   color:#444;
 }
 
-/* BADGE 3 LEVEL */
+/* BADGE */
 .badge{
   display:inline-block;
   margin-top:10px;
@@ -163,7 +178,6 @@ button{
   color:white;
 }
 
-/* 3 LEVEL WARNA */
 .sangat{
   background:#16a34a;
 }
@@ -231,7 +245,7 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQlxCk2GJ4DLSD
 
 let dataSiswa = [];
 
-/* PARSER */
+/* PARSER CSV */
 function parseCSV(text){
   const lines = text.trim().split("\n");
 
@@ -244,6 +258,7 @@ function parseCSV(text){
       ttl:(val?.[2]||"").replace(/"/g,"").trim(),
       kelas:(val?.[3]||"").replace(/"/g,"").trim(),
       status:(val?.[4]||"").replace(/"/g,"").trim(),
+      dokumen:(val?.[5]||"").replace(/"/g,"").trim(),
     };
   });
 }
@@ -252,30 +267,47 @@ function parseCSV(text){
 fetch(sheetURL)
 .then(r=>r.text())
 .then(t=>{
-  dataSiswa=parseCSV(t);
+  dataSiswa = parseCSV(t);
 });
+
+/* CONVERT GOOGLE DRIVE LINK */
+function convertDriveLink(url){
+  if(!url) return "#";
+
+  const match = url.match(/\/d\/(.*?)\//);
+
+  if(match && match[1]){
+    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+  }
+
+  return url;
+}
 
 /* SEARCH */
 function cariData(){
-  const nisn=document.getElementById("nisn").value.trim();
-  const hasil=document.getElementById("hasil");
-  const loading=document.getElementById("loading");
+
+  const nisn = document.getElementById("nisn").value.trim();
+
+  const hasil = document.getElementById("hasil");
+
+  const loading = document.getElementById("loading");
 
   hasil.classList.remove("show");
-  hasil.innerHTML="";
+  hasil.innerHTML = "";
 
   if(!nisn){
-    hasil.innerHTML="Masukkan NISN";
+    hasil.innerHTML = "Masukkan NISN";
     hasil.classList.add("show");
     return;
   }
 
-  loading.style.display="block";
+  loading.style.display = "block";
 
   setTimeout(()=>{
-    loading.style.display="none";
 
-    const s=dataSiswa.find(x=>x.nisn===nisn);
+    loading.style.display = "none";
+
+    const s = dataSiswa.find(x => x.nisn === nisn);
 
     if(s){
 
@@ -284,33 +316,42 @@ function cariData(){
       let badgeClass = "";
       let pesan = "";
 
-      /* 3 LEVEL KELULUSAN */
+      /* LEVEL KELULUSAN */
       if(status.includes("LULUS SANGAT MEMUASKAN")){
-        badgeClass="sangat";
-        pesan="Lanjutkan ke pendidikan selanjutnya dengan penuh semangat.";
+        badgeClass = "sangat";
+        pesan = "Lanjutkan ke pendidikan selanjutnya dengan penuh semangat.";
       }
+
       else if(status.includes("LULUS MEMUASKAN")){
-        badgeClass="mem";
-        pesan="Tetap semangat dan ayo buktikan bahwa kamu itu calon orang sukses.";
+        badgeClass = "mem";
+        pesan = "Tetap semangat dan ayo buktikan bahwa kamu itu calon orang sukses.";
       }
+
       else if(status.includes("LULUS CUKUP BAIK")){
-        badgeClass="cukup";
-        pesan="Ayo perbaiki dikemudian hari, jangan lupa lebih rajin dan giat.";
+        badgeClass = "cukup";
+        pesan = "Ayo perbaiki dikemudian hari, jangan lupa lebih rajin dan giat.";
       }
+
       else{
-        badgeClass="cukup";
-        pesan="Silakan hubungi pihak sekolah untuk informasi lebih lanjut.";
+        badgeClass = "cukup";
+        pesan = "Silakan hubungi pihak sekolah untuk informasi lebih lanjut.";
       }
 
       const initial = s.nama ? s.nama.charAt(0).toUpperCase() : "?";
 
-      hasil.innerHTML=`
+      hasil.innerHTML = `
+      
         <div class="avatar">${initial}</div>
 
         <div class="name">${s.nama}</div>
 
-        <div class="info"><b>Tanggal Lahir:</b> ${s.ttl}</div>
-        <div class="info"><b>Kelas:</b> ${s.kelas}</div>
+        <div class="info">
+          <b>Tanggal Lahir:</b> ${s.ttl}
+        </div>
+
+        <div class="info">
+          <b>Kelas:</b> ${s.kelas}
+        </div>
 
         <div class="badge ${badgeClass}">
           ${s.status}
@@ -319,9 +360,26 @@ function cariData(){
         <div class="note">
           ${pesan}
         </div>
+
+        ${s.dokumen ? `
+          <a href="${convertDriveLink(s.dokumen)}" target="_blank">
+            <button class="download-btn">
+              Download Dokumen Kelulusan
+            </button>
+          </a>
+        ` : ""}
+
       `;
-    } else {
-      hasil.innerHTML="Data tidak ditemukan";
+
+    } 
+    
+    else {
+
+      hasil.innerHTML = `
+        <div class="note">
+          Data tidak ditemukan
+        </div>
+      `;
     }
 
     hasil.classList.add("show");
